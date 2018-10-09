@@ -11,8 +11,15 @@
 #include <sys/msg.h>
 #include <getopt.h>
 #include <string.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define SHMKEY	86868            /* Parent and child agree on common key.*/
+#define SEMKEY 98989
+
+#define PERMS (mode_t)(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define FLAGS (O_CREAT | O_EXCL)
 
 static volatile sig_atomic_t doneflag = 0;
 
@@ -37,9 +44,11 @@ int main (int argc, char *argv[]){
 	int currentProcesses = 0;
 	int processCount = 0;
 	int maxProcesses = 5;
-	int maxTotal = 100;
+	int maxTotal = 10;
 	int killTime = 2;
 	char * fileName;
+	sem_t *sem;
+	int semTest = 0;
 
 	struct sigaction act;
 	static clockStruct *clock;
@@ -64,6 +73,18 @@ int main (int argc, char *argv[]){
 
 	clock -> seconds = 0;
 	clock -> nanosecs = 0;
+
+
+	sem = sem_open("clockSem", FLAGS, PERMS, 1);
+
+	while (semTest < 5){
+
+		sem_wait(sem);
+		clock->seconds += 5;
+		sem_post(sem);
+		printf("Seconds: %d\n", clock->seconds);
+		semTest++;
+	}
 
 
 	while (opt != -1) {
@@ -123,7 +144,8 @@ int main (int argc, char *argv[]){
 		}
 
 	}
-
+	sleep(10);
+	printf("End of parent\n");
 	shmdt(clock);
 
 	shmctl(shmid, IPC_RMID, NULL);
