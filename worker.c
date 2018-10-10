@@ -17,6 +17,9 @@
 
 #define SHMKEY	86868             /* Parent and child agree on common key.*/
 
+#define PERMS (mode_t)(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define FLAGS (O_CREAT | O_EXCL)
+
 typedef struct {
 	int seconds;
 	int nanosecs;
@@ -31,7 +34,7 @@ int main (int argc, char *argv[]) {
 
 	static messageStruct *clock;
 
-	sem = sem_open("clockSem", 0);
+	sem = sem_open("clockSem",O_CREAT, PERMS, 0);
 
 	printf("Child process enterred: %d\n", pid);
 
@@ -39,10 +42,11 @@ int main (int argc, char *argv[]) {
 	int shmid = shmget(SHMKEY, sizeof(messageStruct), 0666 | IPC_CREAT);
 
 	clock = (messageStruct *)shmat(shmid, NULL, 0);
+	
 	sem_wait(sem);
 	printf("Child %d reads seconds: %d\n", pid, clock->seconds);
 	clock->seconds += 100;
-	printf("Child %d reads nanosecs: %d\n", pid, clock->nanosecs);
+	printf("Child %d reads seconds again: %d\n", pid, clock->seconds);
  	if (clock->pid == 0){
  		clock->pid = pid;
  	}

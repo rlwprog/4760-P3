@@ -77,7 +77,6 @@ int main (int argc, char *argv[]){
 	sem = sem_open("clockSem", 1);
 
 
-
 	while (opt != -1) {
 
 		opt = (getopt(argc, argv, "s:t:l:h"));
@@ -145,9 +144,9 @@ int main (int argc, char *argv[]){
 			currentProcesses -= 1;
 		}
 		clock->seconds += 1000;
+		printf("Seconds: %d\n", clock->seconds);			
 			
 		sem_post(sem);
-		printf("Seconds: %d\n", clock->seconds);			
 
 		
 
