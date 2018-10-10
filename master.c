@@ -141,11 +141,11 @@ int main (int argc, char *argv[]){
 
 		sem_wait(sem);
             if(clock->pid > 0){
-                printf("Parent communicates with child: %d\n", clock->pid);
+                printf("Child finished: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
                 clock->pid = 0;
                 currentProcesses -= 1;
             }
-            clock->nanosecs += 100000;
+            clock->nanosecs += 2000000;
             if (clock->nanosecs >= 1000000000){
                 clock->seconds += 1;
                 clock->nanosecs = clock->nanosecs % 1000000000;
@@ -153,7 +153,7 @@ int main (int argc, char *argv[]){
             if (clock->seconds >= 2){
                 clock->nanosecs = 0;
             }
-        printf("Nanoseconds: %d\n", clock->nanosecs);
+        // printf("Nanoseconds: %d\n", clock->nanosecs);
 
         sem_post(sem);
 
@@ -169,7 +169,7 @@ int main (int argc, char *argv[]){
 	while((waitpid = wait(&waitstatus)) > 0){
             sem_wait(sem);
             if(clock->pid > 0){
-                printf("Parent communicates with child: %d\n", clock->pid);
+                printf("Child finished: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
                 clock->pid = 0;
                 currentProcesses -= 1;
             }

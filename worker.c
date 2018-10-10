@@ -64,17 +64,19 @@ int main (int argc, char *argv[]) {
 	            endtimeNano = endtimeNano % 1000000000;
 	        }
         }  
-        printf("Child %d end time: %d : %d\n", pid, endtimeSec, endtimeNano);
+  //       printf("Child %d end time: %d : %d\n", pid, endtimeSec, endtimeNano);
             
-		printf("Child %d reads seconds: %d\n", pid, clock->seconds);
-		printf("Child %d reads nanoseconds: %d\n", pid, clock->nanosecs);
+		// printf("Child %d reads seconds: %d\n", pid, clock->seconds);
+		// printf("Child %d reads nanoseconds: %d\n", pid, clock->nanosecs);
 	 	if (clock->pid == 0){
             if(endtimeSec < clock->seconds){
             	clock->pid = pid;
+            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000000);
                 doneLooping = 1;
                 // printf("Child %d complete!\n", pid);
             } else if (endtimeSec <= clock->seconds && endtimeNano <= clock->nanosecs){
             	clock->pid = pid;
+            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000000);
                 doneLooping = 1;
                 // printf("Child %d complete!\n", pid);
 
