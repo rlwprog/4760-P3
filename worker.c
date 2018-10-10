@@ -20,31 +20,32 @@
 typedef struct {
 	int seconds;
 	int nanosecs;
-} clockStruct;
+	int pid;
+	double shmMsg;
+} messageStruct;
 
 int main (int argc, char *argv[]) {
 
 	int pid = getpid();
 	sem_t *sem;
-	int semTest = 0;
 
-	static clockStruct *clock;
+	static messageStruct *clock;
 
 	sem = sem_open("clockSem", 0);
-
 
 	printf("Child process enterred: %d\n", pid);
 
 
-	int shmid = shmget(SHMKEY, sizeof(clockStruct), 0666 | IPC_CREAT);
+	int shmid = shmget(SHMKEY, sizeof(messageStruct), 0666 | IPC_CREAT);
 
-	printf("%d\n", shmid);
-
-	clock = (clockStruct *)shmat(shmid, NULL, 0);
+	clock = (messageStruct *)shmat(shmid, NULL, 0);
 	sem_wait(sem);
-	printf("Child %d reads the data before change: %d\n", pid, clock->seconds);
- 	clock->seconds += 5;
- 	printf("Child %d reads the data after change: %d\n", pid, clock->seconds);
+	printf("Child %d reads seconds: %d\n", pid, clock->seconds);
+	clock->seconds += 100;
+	printf("Child %d reads nanosecs: %d\n", pid, clock->nanosecs);
+ 	if (clock->pid == 0){
+ 		clock->pid = pid;
+ 	}
 
  	sem_post(sem);
 

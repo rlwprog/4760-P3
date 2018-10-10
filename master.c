@@ -27,15 +27,12 @@ static void setdoneflag(int signo){
 	doneflag = 1;
 }
 
-typedef struct {
-	int seconds;
-	int nanosecs;
-} clockStruct;
 
 typedef struct {
 	int seconds;
 	int nanosecs;
 	int pid;
+	double shmMsg;
 } messageStruct;
 
 int main (int argc, char *argv[]){
@@ -48,10 +45,10 @@ int main (int argc, char *argv[]){
 	int killTime = 2;
 	char * fileName;
 	sem_t *sem;
-	int semTest = 0;
+	int childPid;
 
 	struct sigaction act;
-	static clockStruct *clock;
+	static messageStruct *clock;
 
 	int timeLimit = 2;
 	
@@ -68,23 +65,17 @@ int main (int argc, char *argv[]){
 	signal(SIGALRM, setdoneflag);
 	alarm(timeLimit);
 
-	int shmid = shmget(SHMKEY, sizeof(clockStruct), 0666 | IPC_CREAT);
-	clock = (clockStruct *)shmat(shmid, NULL, 0);
+	int shmid = shmget(SHMKEY, sizeof(messageStruct), 0666 | IPC_CREAT);
+	clock = (messageStruct *)shmat(shmid, NULL, 0);
 
 	clock -> seconds = 0;
 	clock -> nanosecs = 0;
+	clock -> pid = 0;
+	clock -> shmMsg = 0;
 
 
-	sem = sem_open("clockSem", FLAGS, PERMS, 1);
+	sem = sem_open("clockSem", 1);
 
-	while (semTest < 5){
-
-		sem_wait(sem);
-		clock->seconds += 5;
-		sem_post(sem);
-		printf("Seconds: %d\n", clock->seconds);
-		semTest++;
-	}
 
 
 	while (opt != -1) {
@@ -125,23 +116,42 @@ int main (int argc, char *argv[]){
 	}
 
 	while (processCount < maxTotal && !doneflag){
+		if (currentProcesses<maxProcesses){
+			if ((childPid = fork()) == 0){
+				execlp("./worker", "./worker");
 
-		if (fork() == 0){
-			execlp("./worker", "./worker");
-
-			fprintf(stderr, "%sFailed exec worker!\n", argv[0]);
-			exit(-1);
-		}
-
+				fprintf(stderr, "%sFailed exec worker!\n", argv[0]);
+				exit(-1);
+			}
+		
+		printf("Childpid: %d\n", childPid);
 		printf("Process number: %d\n", processCount);
 		printf("Current Processes: %d\n", currentProcesses);
 		processCount += 1;
 		currentProcesses += 1;
+	}
+		// if (currentProcesses >= maxProcesses){
+		// 	wait(NULL);
+		// 	currentProcesses -= 1;
+		// }
 
-		if (currentProcesses >= maxProcesses){
-			wait(NULL);
+
+		
+
+		sem_wait(sem);
+		if(clock->pid > 0){
+			printf("Parent communicates with child: %d\n", clock->pid);
+			clock->pid = 0;
 			currentProcesses -= 1;
 		}
+		clock->seconds += 1000;
+			
+		sem_post(sem);
+		printf("Seconds: %d\n", clock->seconds);			
+
+		
+
+
 
 	}
 	sleep(10);
