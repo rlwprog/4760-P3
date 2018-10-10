@@ -41,11 +41,13 @@ int main (int argc, char *argv[]){
 	int currentProcesses = 0;
 	int processCount = 0;
 	int maxProcesses = 5;
-	int maxTotal = 10;
+	int maxTotal = 100;
 	int killTime = 2;
 	char * fileName;
 	sem_t *sem;
 	int childPid;
+	pid_t waitpid;
+    int waitstatus = 0;
 
 	struct sigaction act;
 	static messageStruct *clock;
@@ -138,23 +140,42 @@ int main (int argc, char *argv[]){
 		
 
 		sem_wait(sem);
-		if(clock->pid > 0){
-			printf("Parent communicates with child: %d\n", clock->pid);
-			clock->pid = 0;
-			currentProcesses -= 1;
-		}
-		clock->seconds += 1000;
-		printf("Seconds: %d\n", clock->seconds);			
-			
-		sem_post(sem);
+            if(clock->pid > 0){
+                printf("Parent communicates with child: %d\n", clock->pid);
+                clock->pid = 0;
+                currentProcesses -= 1;
+            }
+            clock->nanosecs += 100000;
+            if (clock->nanosecs >= 1000000000){
+                clock->seconds += 1;
+                clock->nanosecs = clock->nanosecs % 1000000000;
+            }
+            if (clock->seconds >= 2){
+                clock->nanosecs = 0;
+            }
+        printf("Nanoseconds: %d\n", clock->nanosecs);
+
+        sem_post(sem);
 
 		
 
 
 
 	}
-	sleep(10);
-	printf("End of parent\n");
+
+	clock->seconds = 2;
+    clock->nanosecs = 0;
+
+	while((waitpid = wait(&waitstatus)) > 0){
+            sem_wait(sem);
+            if(clock->pid > 0){
+                printf("Parent communicates with child: %d\n", clock->pid);
+                clock->pid = 0;
+                currentProcesses -= 1;
+            }
+            sem_post(sem);
+            
+        }	printf("End of parent\n");
 	shmdt(clock);
 
 	shmctl(shmid, IPC_RMID, NULL);

@@ -30,28 +30,60 @@ typedef struct {
 int main (int argc, char *argv[]) {
 
 	int pid = getpid();
-	sem_t *sem;
+    sem_t *sem;
+    srand(time(NULL)*(pid^2) % 10000);
+    int randNum = rand() % 1000000 + 1;
+    int endtimeSec = 0;
+    int endtimeNano = 0;
+    int doneLooping = 0;
 
 	static messageStruct *clock;
 
 	sem = sem_open("clockSem",O_CREAT, PERMS, 0);
 
-	printf("Child process enterred: %d\n", pid);
+    printf("Child process enterred: %d rand: %d\n", pid, randNum);
 
 
 	int shmid = shmget(SHMKEY, sizeof(messageStruct), 0666 | IPC_CREAT);
 
 	clock = (messageStruct *)shmat(shmid, NULL, 0);
 	
-	sem_wait(sem);
-	printf("Child %d reads seconds: %d\n", pid, clock->seconds);
-	clock->seconds += 100;
-	printf("Child %d reads seconds again: %d\n", pid, clock->seconds);
- 	if (clock->pid == 0){
- 		clock->pid = pid;
- 	}
 
- 	sem_post(sem);
+	while(!doneLooping){
+		sem_wait(sem);
+		if(endtimeSec == 0 && endtimeNano == 0){
+			endtimeNano = randNum + clock->nanosecs;
+	        endtimeSec = clock->seconds;
+	        if (endtimeNano >= 1000000000){
+	            endtimeSec += 1;
+	        }
+	        if (endtimeSec >= 2){
+	            endtimeSec = 2;
+	            endtimeNano = 0;
+	        } else {
+	            endtimeNano = endtimeNano % 1000000000;
+	        }
+        }  
+        printf("Child %d end time: %d : %d\n", pid, endtimeSec, endtimeNano);
+            
+		printf("Child %d reads seconds: %d\n", pid, clock->seconds);
+		printf("Child %d reads nanoseconds: %d\n", pid, clock->nanosecs);
+	 	if (clock->pid == 0){
+            if(endtimeSec < clock->seconds){
+            	clock->pid = pid;
+                doneLooping = 1;
+                // printf("Child %d complete!\n", pid);
+            } else if (endtimeSec <= clock->seconds && endtimeNano <= clock->nanosecs){
+            	clock->pid = pid;
+                doneLooping = 1;
+                // printf("Child %d complete!\n", pid);
+
+            }
+
+        }
+
+	 	sem_post(sem);
+	}
 
  	shmdt(clock);
 
