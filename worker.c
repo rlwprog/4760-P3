@@ -71,12 +71,12 @@ int main (int argc, char *argv[]) {
 	 	if (clock->pid == 0){
             if(endtimeSec < clock->seconds){
             	clock->pid = pid;
-            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000000);
+            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000);
                 doneLooping = 1;
                 // printf("Child %d complete!\n", pid);
             } else if (endtimeSec <= clock->seconds && endtimeNano <= clock->nanosecs){
             	clock->pid = pid;
-            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000000);
+            	clock->shmMsg = (double)endtimeSec + ((double)endtimeNano / 1000000);
                 doneLooping = 1;
                 // printf("Child %d complete!\n", pid);
 

@@ -135,9 +135,6 @@ int main (int argc, char *argv[]){
 				fprintf(stderr, "%sFailed exec worker!\n", argv[0]);
 				_exit(1);
 		}
-		if (childPid == -1){
-			printf("\n\n\n\n\n\n\n\n\n\n\n\nFORK FAILED AT PROCESS: %d\n\n\n\n\n\n\n\n", processCount); 
-		}
 		
 		printf("Childpid: %d\n", childPid);
 		printf("Process number: %d\n", processCount);
@@ -155,9 +152,9 @@ int main (int argc, char *argv[]){
 
 		sem_wait(sem);
             if(clock->pid > 0){
-                printf("Child finished in loop 1: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
+                fprintf(fileOut, "OSS: Child %d is terminating at my time %d.%d because it reached %f in user\n", clock->pid, clock->seconds, clock->nanosecs, clock->shmMsg);
 		
-		clock->pid = 0;
+			clock->pid = 0;
                 currentProcesses -= 1;
             }
             clock->nanosecs += 10000;
@@ -193,7 +190,6 @@ int main (int argc, char *argv[]){
     }	
 	printf("Processes: %d\n", processCount); 
     printf("End of parent\n");
-    fprintf(fileOut, "Test\n");
 	shmdt(clock);
 
 	shmctl(shmid, IPC_RMID, NULL);
