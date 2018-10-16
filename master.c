@@ -49,6 +49,8 @@ int main (int argc, char *argv[]){
 	pid_t waitpid;
     int waitstatus = 0;
 
+    FILE * fileOut;
+
 	struct sigaction act;
 	static messageStruct *clock;
 
@@ -95,7 +97,7 @@ int main (int argc, char *argv[]){
 				break;
 			case 'l':
 				fileName = malloc(strlen(optarg));
-				strcpy(fileName,optarg);
+				strcpy(fileName, optarg);
 				fprintf(stderr, "Testing fileName: %s\n", fileName);
 				break;
 			case 'h':
@@ -116,14 +118,26 @@ int main (int argc, char *argv[]){
 
 	}
 
+	if (fileName == NULL){
+		fileOut = fopen("logfile", "w");
+	} else {
+		fileOut = fopen(fileName, "w");
+	}
+	
+
+
+
 	while (processCount < maxTotal && !doneflag){
 		if (currentProcesses<maxProcesses){
 			if ((childPid = fork()) == 0){
-				execlp("./worker", "./worker");
+				execlp("./worker", "./worker", (char*)NULL);
 
 				fprintf(stderr, "%sFailed exec worker!\n", argv[0]);
-				exit(-1);
-			}
+				_exit(1);
+		}
+		if (childPid == -1){
+			printf("\n\n\n\n\n\n\n\n\n\n\n\nFORK FAILED AT PROCESS: %d\n\n\n\n\n\n\n\n", processCount); 
+		}
 		
 		printf("Childpid: %d\n", childPid);
 		printf("Process number: %d\n", processCount);
@@ -141,11 +155,12 @@ int main (int argc, char *argv[]){
 
 		sem_wait(sem);
             if(clock->pid > 0){
-                printf("Child finished: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
-                clock->pid = 0;
+                printf("Child finished in loop 1: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
+		
+		clock->pid = 0;
                 currentProcesses -= 1;
             }
-            clock->nanosecs += 2000000;
+            clock->nanosecs += 10000;
             if (clock->nanosecs >= 1000000000){
                 clock->seconds += 1;
                 clock->nanosecs = clock->nanosecs % 1000000000;
@@ -153,7 +168,7 @@ int main (int argc, char *argv[]){
             if (clock->seconds >= 2){
                 clock->nanosecs = 0;
             }
-        // printf("Nanoseconds: %d\n", clock->nanosecs);
+        //printf("Nanoseconds: %d\n", clock->nanosecs);
 
         sem_post(sem);
 
@@ -169,13 +184,16 @@ int main (int argc, char *argv[]){
 	while((waitpid = wait(&waitstatus)) > 0){
             sem_wait(sem);
             if(clock->pid > 0){
-                printf("Child finished: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
+                printf("Child finished in loop 2: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
                 clock->pid = 0;
                 currentProcesses -= 1;
             }
             sem_post(sem);
             
-        }	printf("End of parent\n");
+    }	
+	printf("Processes: %d\n", processCount); 
+    printf("End of parent\n");
+    fprintf(fileOut, "Test\n");
 	shmdt(clock);
 
 	shmctl(shmid, IPC_RMID, NULL);
