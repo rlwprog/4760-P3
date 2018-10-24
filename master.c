@@ -119,10 +119,11 @@ int main (int argc, char *argv[]){
 	}
 
 	if (fileName == NULL){
-		fileOut = fopen("logfile", "w");
-	} else {
-		fileOut = fopen(fileName, "w");
+		fileName = malloc(strlen("logfile"));
+		strcpy(fileName, "logfile");
 	}
+		fileOut = fopen(fileName, "w");
+	
 	
 
 
@@ -181,7 +182,7 @@ int main (int argc, char *argv[]){
 	while((waitpid = wait(&waitstatus)) > 0){
             sem_wait(sem);
             if(clock->pid > 0){
-                printf("Child finished in loop 2: %d Time: %1.2f\n", clock->pid, clock->shmMsg);
+                fprintf(fileOut, "OSS: Child %d is terminating at my time %d.%d because it reached %f in user\n", clock->pid, clock->seconds, clock->nanosecs, clock->shmMsg);
                 clock->pid = 0;
                 currentProcesses -= 1;
             }
